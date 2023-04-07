@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start"
+    tools:context=".actividades.hijo.PrincipalHijoActivity"
+    android:id="@+id/DrawerLayout">
+
+    <include layout ="@layout/menu_bar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <com.google.android.material.navigation.NavigationView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        android:id="@+id/Navigation_View"
+        app:headerLayout="@layout/header_lay"
+        app:menu="@menu/navigation_item"/>
+    <RelativeLayout
+        android:id="@+id/contenidoPrincipalHijo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Soy un hijo"
+            android:textSize="40dp"
+            android:layout_centerInParent="true"
+            android:id="@+id/TextHijo"
+            />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cerrar Sesion"
+            android:backgroundTint="@color/gris"
+            android:id="@+id/cerrarSesionHijo"
+            android:layout_below="@+id/TextHijo"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancelar Schedule"
+            android:id="@+id/cancelarScehdule"
+            android:layout_below="@+id/cerrarSesionHijo"
+            android:paddingTop="10dp"/>
+    </RelativeLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/MenuInicio"
+        android:title="Inicio"
+        android:icon="@drawable/ic_baseline_home_24"
+        />
+    <item
+        android:id="@+id/MenuPerfil"
+        android:title="Perfil"
+        android:icon="@drawable/ic_baseline_person"
+        />
+    <item
+        android:id="@+id/MenuGeolocalizacion"
+        android:title="Geolocalizacon"
+        android:icon="@drawable/ic_baseline_my_location"
+        />
+    <item
+        android:id="@+id/MenuAjustes"
+        android:title="Ajustes"
+        android:icon="@drawable/ic_baseline_gear"
+        />
+
+</menu>
