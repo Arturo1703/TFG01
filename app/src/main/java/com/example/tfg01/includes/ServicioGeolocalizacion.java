@@ -87,9 +87,6 @@ public class ServicioGeolocalizacion extends JobService {
                             }
                         }
                     }
-
-
-
                 });
                 jobFinished(params, false);
             }

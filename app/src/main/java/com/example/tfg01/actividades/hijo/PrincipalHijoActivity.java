@@ -66,7 +66,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_principal_hijo);
-
         //Inicializamos los distintos botones y secciones que veremos en esta actividad
         logOut = findViewById(R.id.cerrarSesionHijo);
         cancelJob = findViewById(R.id.cancelarScehdule);
@@ -267,24 +266,11 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                         padres.add(ds.getKey().toString());
                     }
                     if(!padres.isEmpty()) {
-                        getVideos();
                         //Analizar videos del hijo
                         //Bloquear video y mandar alerta a los padres
                     }
                 }
             }
         });
-    }
-    private void getVideos(){
-        videoArrayList.clear();
-        String path = "/Storage/Videos/";
-        File file = new File(path);
-        File[] files = file.listFiles();
-        if(files != null){
-            for (File file1: files){
-                videoArrayList.add(new Video(file1.getPath()));
-            }
-        }
-
     }
 }
