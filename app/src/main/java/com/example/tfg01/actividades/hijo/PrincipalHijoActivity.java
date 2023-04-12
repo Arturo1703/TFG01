@@ -29,6 +29,7 @@ import com.example.tfg01.R;
 import com.example.tfg01.actividades.MainActivity;
 import com.example.tfg01.includes.LocationUpdate;
 import com.example.tfg01.includes.ServicioGeolocalizacion;
+import com.example.tfg01.modelos.Tiempo;
 import com.example.tfg01.modelos.Video;
 import com.example.tfg01.proveedores.AuthProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -187,6 +188,10 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     }
     //Esta funcion se llama para obtener la latitud y longitud de la localizacion y guardarla en nuestra BD
     private void iniciarGeolocalizacion(Location location){
+        String tiempo;
+        //Obtenemos la fecha y hora para poder ponerla en nuestro mapa
+        Tiempo tiempo1 = new Tiempo();
+        tiempo = tiempo1.getTiempo();
         mAuth = FirebaseAuth.getInstance();
         String uid = mAuth.getCurrentUser().getUid();
         mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
@@ -195,6 +200,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
         mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("lat").setValue(latitud + "");
         double longitud = location.getLongitude();
         mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("lon").setValue(longitud + "");
+        mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("com").setValue(tiempo);
     }
 
     //Esta funcion se encarga de crear un servicio que geolocalice el movil cada x tiempo
@@ -228,6 +234,11 @@ public class PrincipalHijoActivity extends AppCompatActivity {
         mDatabase.child("Users").child("hijo").child(uid).child("locationNum").setValue(1);
         mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("lat").setValue(40.1465 + "");
         mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("lon").setValue(-3.70256 + "");
+        String tiempo;
+        //Obtenemos la fecha y hora para poder ponerla en nuestro mapa
+        Tiempo tiempo1 = new Tiempo();
+        tiempo = tiempo1.getTiempo();
+        mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("com").setValue(tiempo);
     }
 
     //Esta funcion cancela el servicio, esto no se presentará en el modelo final pero sirve para testear y no tener un servicio continuo en tu dispositivo
@@ -255,9 +266,11 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                     for (DataSnapshot ds : task.getResult().getChildren()) {
                         padres.add(ds.getKey().toString());
                     }
-                    getVideos();
-                    //Analizar videos del hijo
-                    //Bloquear video y mandar alerta a los padres
+                    if(!padres.isEmpty()) {
+                        getVideos();
+                        //Analizar videos del hijo
+                        //Bloquear video y mandar alerta a los padres
+                    }
                 }
             }
         });

@@ -13,6 +13,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.tfg01.modelos.Tiempo;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -61,13 +62,10 @@ public class ServicioGeolocalizacion extends JobService {
                 mDatabase.child("Users").child("hijo").child(uid).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DataSnapshot> task) {
-                        String formatoHora, formatoFecha, tiempo;
+                        String tiempo;
                         //Obtenemos la fecha y hora para poder ponerla en nuestro mapa
-                        formatoHora = "HH:mm:ss";
-                        formatoFecha = "yyyy-MM-dd";
-                        tiempo = "Dia: ";
-                        tiempo += obtenerTiempoActual(formatoFecha) + ", Hora: ";
-                        tiempo += obtenerTiempoActual(formatoHora);
+                        Tiempo tiempo1 = new Tiempo();
+                        tiempo = tiempo1.getTiempo();
                         if (task.isSuccessful()) {
                             for (DataSnapshot ds : task.getResult().getChildren()) {
                                 if (ds.getKey().equals("locationNum")) {
@@ -104,15 +102,5 @@ public class ServicioGeolocalizacion extends JobService {
         Log.d(Tag, "Job Canceled");
         JobCanceled = true;
         return false;
-    }
-
-    private String obtenerTiempoActual(String formato){
-        String ZonaHoraria = "GMT+1";
-        Calendar calendar = Calendar.getInstance();
-        Date date = calendar.getTime();
-        SimpleDateFormat sdf;
-        sdf = new SimpleDateFormat(formato);
-        sdf.setTimeZone(TimeZone.getTimeZone(ZonaHoraria));
-        return sdf.format(date);
     }
 }
