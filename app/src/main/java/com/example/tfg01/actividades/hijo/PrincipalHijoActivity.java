@@ -52,7 +52,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     AuthProvider authp;
     Intent mapIntent = new Intent();
     LocationUpdate update = new LocationUpdate();
-    ArrayList<Video> videoArrayList = new ArrayList<Video>();
     private static final String TAG = "MainActivity";
 
     DrawerLayout drawerLayout;
