@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -81,14 +82,27 @@ public class RegistroPadre extends AppCompatActivity {
                     padre.setId(FirebaseAuth.getInstance().getCurrentUser().getUid().toString());
                     padre.CreateHijos();
                     mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
-                    mDatabase.child("Users").child("padre").child(padre.getId()).setValue(padre).addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            Intent intent = new Intent(RegistroPadre.this, TerminosCondicionesPadre.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
-                        }
-                    });
+                    FirebaseMessaging.getInstance().getToken()
+                            .addOnCompleteListener(new OnCompleteListener<String>() {
+                                @Override
+                                public void onComplete(@NonNull Task<String> task) {
+                                    if (!task.isSuccessful()) {
+                                        Log.w("REGISTRO_PADRE", "Fetching FCM registration token failed", task.getException());
+                                    }
+
+                                    // Get new FCM registration token
+                                    String token = task.getResult();
+                                    padre.setToken(token);
+                                    mDatabase.child("Users").child("padre").child(padre.getId()).setValue(padre).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            Intent intent = new Intent(RegistroPadre.this, TerminosCondicionesPadre.class);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                            startActivity(intent);
+                                        }
+                                    });
+                                }
+                            });
                 }else
                     Toast.makeText( RegistroPadre.this, "Could not register succesfully", Toast.LENGTH_SHORT).show();
             }

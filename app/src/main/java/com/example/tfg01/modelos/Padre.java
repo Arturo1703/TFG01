@@ -19,13 +19,15 @@ public class Padre {
     String id;
     String nombre;
     String email;
+
+    String Token;
     ArrayList<String> hijos;
 
     public Padre(){
         this.hijos = new ArrayList<>();
     }
 
-    public Padre(String id, String nombre, String email){
+    public Padre(String id, String nombre, String email, String token){
         this.id = id;
         this.nombre = nombre;
         this.email = email;
@@ -73,6 +75,8 @@ public class Padre {
         return email;
     }
 
+    public String getToken() {return  Token;}
+
     public ArrayList<String> getHijos(){
         return hijos;
     }
@@ -88,6 +92,8 @@ public class Padre {
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
+
+    public void setToken(String token) {this.Token = token; }
 
     public void setHijos(){
         mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
