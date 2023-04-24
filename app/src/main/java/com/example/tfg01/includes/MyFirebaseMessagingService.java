@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -36,23 +38,27 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     DatabaseReference mDatabase;
     FirebaseAuth mAuth;
 
+    String TAG = "MyFirebasMessagingService";
+
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
         Log.e("token", "mi token es: " + token);
+
     }
 
     @Override
-    public void onMessageReceived(@NonNull RemoteMessage message) {
-        super.onMessageReceived(message);
-        String from = message.getFrom();
-        if(message.getData().size()>0){
-            String nombreHijo = message.getData().get("nombreHijo");
-            CreateNotification(nombreHijo);
+    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
+        super.onMessageReceived(remoteMessage);
+        sendNotification(remoteMessage);
+        Log.d(TAG, "From: " + remoteMessage.getFrom());
+        if(remoteMessage.getData().size()>0){
+            // Check if message contains a data payload.
+            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            //sendNotification(remoteMessage);
         }
     }
-
-    private void CreateNotification(String nombreHijo) {
+    private void sendNotification(RemoteMessage remoteMessage) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "mensaje");
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -61,9 +67,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             assert notificationManager != null;
             notificationManager.createNotificationChannel(notificationChannel);
         }
+        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         builder.setAutoCancel(true)
                 .setWhen(System.currentTimeMillis())
-                .setContentTitle("Alerta de Grooming en el usuario: " + nombreHijo)
+                .setContentTitle("Alerta de Grooming en el usuario: " + remoteMessage.getNotification().getBody())
+                .setSound(defaultSoundUri)
+                .setAutoCancel(true)
                 .setSmallIcon(R.drawable.ic_alert)
                 .setContentText("Cliquee la notificacion para empezar el procedimiento")
                 .setContentIntent(clicknoti());
@@ -73,7 +82,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         notificationManager.notify(idNotify,builder.build());
     }
 
-    public void mandarAlerta(){
+
+    public void mandarAlerta(String NombreHijo){
         mAuth = FirebaseAuth.getInstance();
         String uid = mAuth.getCurrentUser().getUid();
         mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
@@ -94,8 +104,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                             try {
                                 json.put("to", PadreToken);
                                 JSONObject notification = new JSONObject();
-                                notification.put("titulo", "Alerta de seguridad con su hijo");
-                                notification.put("nombreHijo", "Jose");
+                                notification.put("title", "Alerta");
+                                notification.put("body", NombreHijo);
                                 json.put("data", notification);
                                 String URL = "https://fcm.googleapis.com/fcm/send";
                                 JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL, json, null, null){
@@ -118,7 +128,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
     public PendingIntent clicknoti(){
         Intent nf = new Intent(getApplicationContext(), MainActivity.class);
-        return PendingIntent.getActivity(this, 0, nf, 0);
+        return PendingIntent.getActivity(this, 0, nf, PendingIntent.FLAG_ONE_SHOT);
     }
     //https://medium.com/nybles/sending-push-notifications-by-using-firebase-cloud-messaging-249aa34f4f4c
     //https://firebase.google.com/docs/cloud-messaging/android/first-message?hl=es-419

@@ -26,6 +26,8 @@ import com.example.tfg01.proveedores.AuthProvider;
 import com.example.tfg01.proveedores.PadreProvider;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 //Esta actividad nos permite registrar a un nuevo padre a la BD una vez resgistrado se le lleva a TerminosConicionesPadre para aceptar los términos
 public class RegistroPadre extends AppCompatActivity {
 
