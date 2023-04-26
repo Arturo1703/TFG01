@@ -21,7 +21,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -32,11 +31,10 @@ import android.widget.Toast;
 
 import com.example.tfg01.R;
 import com.example.tfg01.actividades.MainActivity;
-import com.example.tfg01.includes.FolderHelper;
-import com.example.tfg01.includes.KeyFrames;
 import com.example.tfg01.includes.LocationUpdate;
 import com.example.tfg01.includes.ServicioGeolocalizacion;
 import com.example.tfg01.modelos.Tiempo;
+import com.example.tfg01.modelos.Video;
 import com.example.tfg01.proveedores.AuthProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -352,81 +350,10 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                     }
                     if(!padres.isEmpty()) {
                         //Analizar videos del hijo
-                        //Instancia del helper de las carpetas que se analizan en el dispositivo
-                        FolderHelper folderHelper = FolderHelper.getInstance(PrincipalHijoActivity.this,PrincipalHijoActivity.this);
-
-                        //Directorio de la aplicacion donde se guardarán los keyframes
-                        String appFolder = folderHelper.getStorageDirPath();
-
-                        //TODO quitar la mayoria de los videos de appFolder y anañirlos en las appFolder + rutas de las carpetas originales
-                        ArrayList<String> folder_revisar = new ArrayList();
-
-                        //Analisis de la carpeta de la camara en DCIM
-                        analizarCarpeta(FolderHelper.DCIM_CAMERA_FOLDER, appFolder);
-
-                        //Analisis de la carpeta de descargas
-                        analizarCarpeta(FolderHelper.DOWNLOADS_FOLDER,appFolder);
-                        //Analisis de la carpeta de telegram
-                        //  Para versiones antiguas de telegram la ruta es distinta,
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION,appFolder);
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER,appFolder);
-
-
-                        //Borrar video si es explicito y mandar alerta a los padres
+                        //Bloquear video y mandar alerta a los padres
                     }
                 }
             }
         });
-    }
-
-    //función recursiva que busca en una carpeta y subcarpetas, los archivos que son videos para
-    //su posterior extracción de KeyFrames
-
-    private void analizarCarpeta(final String origFolder,final String destFolder) {
-
-
-            //Utilizamos hilos para mejorar el rendimiento
-            //TODO mirar si este hilo empeora el rendimiento por el acceso silmultaneo de lectura en archivos
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try{
-                        File f = new File(origFolder);
-
-                        File[] archivos = f.listFiles();
-
-
-                        // Utilizamos la clase MediaMetadataRetriever para comprobar que efectivamente el
-                        // archivo que se borra es un video independientemente de su extensión
-                        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-
-                        for (File file : archivos) {
-                            if (file.isFile()) {
-                                try {
-                                    retriever.setDataSource(file.getAbsolutePath());
-                                    String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-                                    if (mime != null && mime.startsWith("video/")) {
-                                        Log.v("HijoActivity", "Fichero ejecutado por comando:\n\n\n       "+file.getName()+"\n");
-                                        KeyFrames.executeComandoKeyFrames(file.getAbsolutePath(), destFolder, file.getName());
-                                    }
-                                } catch (Exception e) {
-                                    Toast.makeText(PrincipalHijoActivity.this, "Error", Toast.LENGTH_SHORT).show();
-                                    e.printStackTrace();
-                                }
-                            }else if(file.isDirectory()){
-                                analizarCarpeta(file.getAbsolutePath(),destFolder);
-                            }
-                        }
-
-                        retriever.release();
-
-                    }catch (Exception e){
-                        Log.e("HijoActivity", "Error al ejecutar analizarCarpeta en la ruta "
-                                +origFolder+": \n"+e.getLocalizedMessage());
-                        e.fillInStackTrace();
-                    }
-                }
-            }).start();
-
     }
 }
