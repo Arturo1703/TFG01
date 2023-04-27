@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "TFG0.1"
 include ':app'
+include ':OpenCV'
