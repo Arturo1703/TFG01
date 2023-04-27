@@ -9,17 +9,20 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.job.JobInfo;
+import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,11 +31,10 @@ import android.widget.Toast;
 
 import com.example.tfg01.R;
 import com.example.tfg01.actividades.MainActivity;
-import com.example.tfg01.includes.FolderHelper;
-import com.example.tfg01.includes.KeyFrames;
 import com.example.tfg01.includes.LocationUpdate;
 import com.example.tfg01.includes.ServicioGeolocalizacion;
 import com.example.tfg01.modelos.Tiempo;
+import com.example.tfg01.modelos.Video;
 import com.example.tfg01.proveedores.AuthProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -62,6 +64,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     DatabaseReference mDatabase;
     FirebaseAuth mAuth;
     AlarmManager alarmManager;
+    String mensaje;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,12 +156,15 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                     if (locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null /*isProviderEnabled*/) {
                         /*updateBestLocation(locationHandler.getLastKnow...)*/
                         location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
                         iniciarGeolocalizacion(location);
-                        iniciarServicioGeolocalizacion();
+                        locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 60000, 20, locationListener);
+                        //iniciarServicioGeolocalizacion();
                     } else if (locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) != null) {
                         location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                         iniciarGeolocalizacion(location);
-                        iniciarServicioGeolocalizacion();
+                        locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 60000, 20, locationListener);
+                        //iniciarServicioGeolocalizacion();
                     }
                     //En el caso de que no haya un provider crea una localizacion falsa en madrid
                     else {
@@ -173,12 +179,14 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                 if (locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null){
                     location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                     iniciarGeolocalizacion(location);
-                    iniciarServicioGeolocalizacion();
+                    locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 60000, 20, locationListener);
+                    //iniciarServicioGeolocalizacion();
                 }
                 else if(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null){
                     location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                     iniciarGeolocalizacion(location);
-                    iniciarServicioGeolocalizacion();
+                    locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 60000, 20, locationListener);
+                    //iniciarServicioGeolocalizacion();
                 }
                 else{
                     geolocalizaciónFalsa();
@@ -203,8 +211,82 @@ public class PrincipalHijoActivity extends AppCompatActivity {
         mDatabase.child("Users").child("hijo").child(uid).child("location").child ("0").child("com").setValue(tiempo);
     }
 
-    //Esta funcion se encarga de crear un servicio que geolocalice el movil cada x tiempo
-    private void iniciarServicioGeolocalizacion(){
+    //Esta es una implementacion temporal para ir actializando la geolocalizacion cada x tiempo pero el movild el menor debe estar encendido
+    LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(@NonNull Location location) {
+            ActualizarUbicacion(location);
+        }
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras){}
+        @Override
+        public void onProviderEnabled( String s){
+            mensaje = "GPS ACTIVADO";
+            Mensaje();
+        }
+        @Override
+        public void onProviderDisabled( String s){
+            mensaje = "GPS DESACTIVADO";
+            locationSart();
+            Mensaje();
+        }
+    };
+
+    private void locationSart(){
+        LocationManager mlocManager=(LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        boolean gpsEnabled = mlocManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if(!gpsEnabled){
+            gpsEnabled = mlocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            if(!gpsEnabled){
+                Intent settingsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(settingsIntent);
+            }
+        }
+    }
+    public void ActualizarUbicacion (Location location) {
+        //Obtenemos el uid del usuario, la altitud y la longitud
+        mAuth = FirebaseAuth.getInstance();
+        String uid = mAuth.getCurrentUser().getUid();
+        double latitud = location.getLatitude();
+        double longitud = location.getLongitude();
+        //Obtenemos el valor locationNum para saber cuantas localizaciones hemos guardado
+        mDatabase.child("Users").child("hijo").child(uid).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DataSnapshot> task) {
+                String tiempo;
+                //Obtenemos la fecha y hora para poder ponerla en nuestro mapa
+                Tiempo tiempo1 = new Tiempo();
+                tiempo = tiempo1.getTiempo();
+                if (task.isSuccessful()) {
+                    for (DataSnapshot ds : task.getResult().getChildren()) {
+                        if (ds.getKey().equals("locationNum")) {
+                            int Counter = ds.getValue(int.class);
+                            int AuxCounter = Counter;
+                            if(Counter >= 10)
+                                AuxCounter = Counter - 10;
+                            //Escribimos en el ultimo espacio o si estan todos llenos en el mas antiguo nuestra localizacion
+                            mDatabase.child("Users").child("hijo").child(uid).child("location").child(AuxCounter+"").child("lat").setValue(latitud + "");
+                            mDatabase.child("Users").child("hijo").child(uid).child("location").child(AuxCounter+"").child("lon").setValue(longitud + "");
+                            mDatabase.child("Users").child("hijo").child(uid).child("location").child(AuxCounter+"").child("com").setValue(tiempo);
+                            //Aumentamos nuestro contador y lo guardamos en la BD
+                            Counter++;
+                            if (Counter == 20)
+                                Counter = 10;
+                            mDatabase.child("Users").child("hijo").child(uid).child("locationNum").setValue(Counter);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    public void Mensaje(){
+        Toast.makeText(this, mensaje, Toast.LENGTH_LONG);
+    }
+
+
+    //Esta funcion se encarga de crear un servicio que geolocalice el movil cada x tiempo independientemente de si la aplicacion esta encendida o apagada
+    /*private void iniciarServicioGeolocalizacion(){
         ComponentName componentName = new ComponentName(this, ServicioGeolocalizacion.class);
         //En este builder instanciamos los parametros de nuestro servicio que son
         //1º setPersisted: Hace que el servicio continua aun cerrando la aplicacion totalmente
@@ -224,7 +306,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
             Log.d(TAG, "Job Scehdule");
         else
             Log.d(TAG, "Job not Schedule");
-    }
+    }*/
 
     //Esta funcion se encarga de mandar a la base de datos una geolocalizacion falsa en el centro de Madrid, se usa en caso de error para no tener fallos en la BD
     private void geolocalizaciónFalsa() {
@@ -268,81 +350,10 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                     }
                     if(!padres.isEmpty()) {
                         //Analizar videos del hijo
-                        //Instancia del helper de las carpetas que se analizan en el dispositivo
-                        FolderHelper folderHelper = FolderHelper.getInstance(PrincipalHijoActivity.this,PrincipalHijoActivity.this);
-
-                        //Directorio de la aplicacion donde se guardarán los keyframes
-                        String appFolder = folderHelper.getStorageDirPath();
-
-                        //TODO quitar la mayoria de los videos de appFolder y anañirlos en las appFolder + rutas de las carpetas originales
-                        ArrayList<String> folder_revisar = new ArrayList();
-
-                        //Analisis de la carpeta de la camara en DCIM
-                        analizarCarpeta(FolderHelper.DCIM_CAMERA_FOLDER, appFolder);
-
-                        //Analisis de la carpeta de descargas
-                        analizarCarpeta(FolderHelper.DOWNLOADS_FOLDER,appFolder);
-                        //Analisis de la carpeta de telegram
-                        //  Para versiones antiguas de telegram la ruta es distinta,
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION,appFolder);
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER,appFolder);
-
-
-                        //Borrar video si es explicito y mandar alerta a los padres
+                        //Bloquear video y mandar alerta a los padres
                     }
                 }
             }
         });
-    }
-
-    //función recursiva que busca en una carpeta y subcarpetas, los archivos que son videos para
-    //su posterior extracción de KeyFrames
-
-    private void analizarCarpeta(final String origFolder,final String destFolder) {
-
-
-            //Utilizamos hilos para mejorar el rendimiento
-            //TODO mirar si este hilo empeora el rendimiento por el acceso silmultaneo de lectura en archivos
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try{
-                        File f = new File(origFolder);
-
-                        File[] archivos = f.listFiles();
-
-
-                        // Utilizamos la clase MediaMetadataRetriever para comprobar que efectivamente el
-                        // archivo que se borra es un video independientemente de su extensión
-                        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-
-                        for (File file : archivos) {
-                            if (file.isFile()) {
-                                try {
-                                    retriever.setDataSource(file.getAbsolutePath());
-                                    String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-                                    if (mime != null && mime.startsWith("video/")) {
-                                        Log.v("HijoActivity", "Fichero ejecutado por comando:\n\n\n       "+file.getName()+"\n");
-                                        KeyFrames.executeComandoKeyFrames(file.getAbsolutePath(), destFolder, file.getName());
-                                    }
-                                } catch (Exception e) {
-                                    Toast.makeText(PrincipalHijoActivity.this, "Error", Toast.LENGTH_SHORT).show();
-                                    e.printStackTrace();
-                                }
-                            }else if(file.isDirectory()){
-                                analizarCarpeta(file.getAbsolutePath(),destFolder);
-                            }
-                        }
-
-                        retriever.release();
-
-                    }catch (Exception e){
-                        Log.e("HijoActivity", "Error al ejecutar analizarCarpeta en la ruta "
-                                +origFolder+": \n"+e.getLocalizedMessage());
-                        e.fillInStackTrace();
-                    }
-                }
-            }).start();
-
     }
 }
