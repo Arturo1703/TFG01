@@ -1,0 +1,2 @@
+ninja: Entering directory `D:\Proyectos\TFG\ProyectoFinal\TFG01\OpenCV\.cxx\Debug\5u4732m2\x86_64'
+ninja: no work to do.
