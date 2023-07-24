@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "C:\\Arturo\\1_informatica\\TFG\\Codigo\\TFGFInal\\TFG01\\OpenCV\\libcxx_helper\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Arturo\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Arturo\\1_informatica\\TFG\\Codigo\\TFGFInal\\TFG01\\OpenCV\\.cxx\\Debug\\3yx363s3\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Arturo\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Arturo\\1_informatica\\TFG\\Codigo\\TFGFInal\\TFG01\\OpenCV\\.cxx\\Debug\\3yx363s3\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "artifactName": "opencv_jni_shared",
+      "abi": "x86",
+      "output": "C:\\Arturo\\1_informatica\\TFG\\Codigo\\TFGFInal\\TFG01\\OpenCV\\.cxx\\Debug\\3yx363s3\\x86\\libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}

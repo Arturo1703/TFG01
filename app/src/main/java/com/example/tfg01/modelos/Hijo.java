@@ -20,13 +20,16 @@ public class Hijo {
     String nombre;
     String email;
 
+    String token;
+
     public Hijo(){
     }
 
-    public Hijo(String id, String nombre, String email){
+    public Hijo(String id, String nombre, String email, String token){
         this.id = id;
         this.nombre = nombre;
         this.email = email;
+        this.token = token;
     }
 
     public Hijo getHijoByID(String ID){
@@ -63,6 +66,10 @@ public class Hijo {
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
+
+    public void setToken(String token) {this.token = token;}
+
+    public String getToken() { return this.token;}
 
     public String getNombre() {return nombre;}
 

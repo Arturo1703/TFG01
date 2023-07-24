@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -36,7 +37,7 @@ public class ListaHijosRVAdapter extends RecyclerView.Adapter<ListaHijosRVAdapte
     }
 
     public interface OnItemClickListener {
-        void onItemClick(String id);
+        void onItemClick(String id, Integer num);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener){
@@ -48,11 +49,19 @@ public class ListaHijosRVAdapter extends RecyclerView.Adapter<ListaHijosRVAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.txtName.setText(listahijos.get(position).getNombre());
         holder.txtId.setText(listahijos.get(position).getId());
+        //holder.image.setImageResource(listahijos.get(position).getImage());
+        holder.botonMensaje.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                String id = listahijos.get(holder.getAdapterPosition()).getId();
+                miListener.onItemClick(id, 2);
+            }
+        });
         holder.card.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String id = listahijos.get(holder.getAdapterPosition()).getId();
-                miListener.onItemClick(id);
+                miListener.onItemClick(id, 1);
             }
         });
     }
@@ -70,6 +79,7 @@ public class ListaHijosRVAdapter extends RecyclerView.Adapter<ListaHijosRVAdapte
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private TextView txtName, txtId;
+        private Button botonMensaje;
         private CardView card;
         private ImageView image;
         public ViewHolder(@NonNull View itemView) {
@@ -78,6 +88,7 @@ public class ListaHijosRVAdapter extends RecyclerView.Adapter<ListaHijosRVAdapte
             txtId = itemView.findViewById(R.id.idlistahijo);
             card = itemView.findViewById(R.id.cardHijoId);
             image = itemView.findViewById(R.id.pflistahijo);
+            botonMensaje = itemView.findViewById(R.id.mensajeHijo);
         }
     }
 

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardMensajeId"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:padding="10dp"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/nmlistaMensaje"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="Nombre Hijo"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/pflistaMensaje"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_below="@+id/nmlistaMensaje"
+            android:layout_marginTop="10dp"
+            android:src="@drawable/ic_launcher_background" />
+
+        <TextView
+            android:id="@+id/msglistaMensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/pflistaMensaje"
+            android:layout_below="@+id/nmlistaMensaje"
+            android:text="Mensaje"
+            android:layout_margin="10dp" />
+        <TextView
+            android:id="@+id/tmplistaMensaje"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/pflistaMensaje"
+            android:text="Fecha"
+            android:layout_margin="10dp" />
+        <Button
+            android:id="@+id/responderMensaje"
+            android:layout_width="130dp"
+            android:layout_height="60dp"
+            android:layout_below="@+id/pflistaMensaje"
+            android:layout_toRightOf="@id/tmplistaMensaje"
+            android:layout_marginLeft="50dp"
+            android:text="Responder" />
+        <Button
+            android:id="@+id/borrarMensaje"
+            android:layout_width="130dp"
+            android:layout_height="60dp"
+            android:layout_below="@+id/pflistaMensaje"
+            android:layout_toRightOf="@id/responderMensaje"
+            android:layout_marginLeft="20dp"
+            android:backgroundTint="@color/gris"
+            android:text="Borrar" />
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

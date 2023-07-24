@@ -1,6 +1,7 @@
 package com.example.tfg01.includes;
 
 import android.app.DownloadManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -23,8 +25,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.google.firebase.messaging.RemoteMessageCreator;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,6 +36,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -44,18 +49,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
         Log.e("token", "mi token es: " + token);
-
     }
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        sendNotification(remoteMessage);
+        //sendNotification(remoteMessage);
         Log.d(TAG, "From: " + remoteMessage.getFrom());
         if(remoteMessage.getData().size()>0){
             // Check if message contains a data payload.
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-            //sendNotification(remoteMessage);
+            sendNotification(remoteMessage);
         }
     }
     private void sendNotification(RemoteMessage remoteMessage) {
@@ -94,13 +98,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 for (DataSnapshot ds : task.getResult().getChildren()) {
                     padreId = ds.getValue(String.class);
                     //A partir del id buscamos informacion del hijo par poder mostrarla en las Tarjetas
-                    mDatabase.child("Users").child("padre").child(padreId).child("Token").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                    mDatabase.child("Users").child("padre").child(padreId).child("token").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
 
                         @Override
                         public void onComplete(@NonNull Task<DataSnapshot> task) {
                             String PadreToken;
                             PadreToken = task.getResult().getValue(String.class);
-                            JSONObject json = new JSONObject();
+                            FirebaseMessaging.getInstance().send(
+                                    RemoteMessage.(PadreToken)
+                                            .setMessageId(UUID.randomUUID().toString())
+                                            .setNotification(new Notification.Builder()
+                                                    .setTitle("alerta de grooming en " + uid)
+                                                    .setBody(uid)
+                                                    .build())
+                                            .build()
+                            );
+                            /*JSONObject json = new JSONObject();
                             try {
                                 json.put("to", PadreToken);
                                 JSONObject notification = new JSONObject();
@@ -119,7 +132,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                                 };
                             } catch (JSONException e) {
                                 throw new RuntimeException(e);
-                            }
+                            }*/
                         }
                     });
                 }
@@ -128,7 +141,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
     public PendingIntent clicknoti(){
         Intent nf = new Intent(getApplicationContext(), MainActivity.class);
-        return PendingIntent.getActivity(this, 0, nf, PendingIntent.FLAG_ONE_SHOT);
+        return PendingIntent.getActivity(this, 0, nf, 0);
     }
     //https://medium.com/nybles/sending-push-notifications-by-using-firebase-cloud-messaging-249aa34f4f4c
     //https://firebase.google.com/docs/cloud-messaging/android/first-message?hl=es-419

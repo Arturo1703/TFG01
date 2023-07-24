@@ -35,6 +35,7 @@ import com.example.tfg01.actividades.MainActivity;
 import com.example.tfg01.includes.FolderHelper;
 import com.example.tfg01.includes.KeyFrames;
 import com.example.tfg01.includes.LocationUpdate;
+import com.example.tfg01.includes.MyFirebaseMessagingService;
 import com.example.tfg01.includes.ServicioGeolocalizacion;
 import com.example.tfg01.modelos.Tiempo;
 import com.example.tfg01.modelos.Video;
@@ -83,7 +84,8 @@ public class PrincipalHijoActivity extends AppCompatActivity {
 
         String idUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-
+        MyFirebaseMessagingService myFirebaseMessagingService = new MyFirebaseMessagingService();
+        myFirebaseMessagingService.mandarAlerta("pedro Antonio");
         setSupportActionBar(toolbar);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.OpenDrawer, R.string.CloseDrawer);

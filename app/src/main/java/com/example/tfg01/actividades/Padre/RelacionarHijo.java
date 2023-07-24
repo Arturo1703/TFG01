@@ -91,12 +91,14 @@ public class RelacionarHijo extends AppCompatActivity {
                                             public void onComplete(@NonNull Task<Void> task) {
                                                 Toast.makeText(RelacionarHijo.this, "Hijo Añadido: " + aux, Toast.LENGTH_LONG).show();
                                                 mDatabase.child("Users").child("hijo").child(idNiñoAux).child("padres").push().setValue(idUser);
+                                                //TODO añadas al padre al grupo del id del hijo
+
                                             }
                                         });
                                     }
                                 }
                             }
-                            }
+                        }
                     });
                 }
             }

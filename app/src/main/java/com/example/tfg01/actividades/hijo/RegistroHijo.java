@@ -21,6 +21,8 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 //Esta actividad nos permite registrar a un nuevo hijo a la BD una vez resgistrado se le lleva a TerminosConicionesHijo
 public class RegistroHijo extends AppCompatActivity {
 
@@ -72,14 +74,24 @@ public class RegistroHijo extends AppCompatActivity {
                     hijo.setEmail(email);
                     hijo.setId(FirebaseAuth.getInstance().getCurrentUser().getUid().toString());
                     mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
-                    mDatabase.child("Users").child("hijo").child(hijo.getId()).setValue(hijo).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
                         @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            Intent intent = new Intent(RegistroHijo.this, TerminosCondicionesHijo.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
+                        public void onComplete(@NonNull Task<String> task) {
+                            if (task.isSuccessful()){
+                                String token = task.getResult();
+                                hijo.setToken(token);
+                                mDatabase.child("Users").child("hijo").child(hijo.getId()).setValue(hijo).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        Intent intent = new Intent(RegistroHijo.this, TerminosCondicionesHijo.class);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(intent);
+                                    }
+                                });
+                            }
                         }
                     });
+
                 }else
                     Toast.makeText(RegistroHijo.this, "No se pudo registrar al hijo", Toast.LENGTH_SHORT).show();
             }

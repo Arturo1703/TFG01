@@ -29,6 +29,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.example.tfg01.includes.myToolbar;
 import com.example.tfg01.R;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 /*
     En esta Actividad utilizamos FirebaseAuth para Autentificar al usuario, leyendo los campos introducidos en emailText y passwordText
     Si el usuario es autentificado correctamente, miramos la variable Term en nuestra BD para chequear que los terminos y condiciones hayan
@@ -80,62 +82,69 @@ public class InicioDeSesionUsuario extends AppCompatActivity {
                     }else {
                         String usuario = mPreference.getString("user", "");
                         String idUser = mAuth.getCurrentUser().getUid();
-                        if (usuario.equals("hijo")) {
-                            //Comprobamos que el hijo que ha sido elegido rpeviamente y el que se presenta en la base de datos son el mismo
-                            mDatabase.child("Users").child("hijo").child(idUser).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<DataSnapshot> task) {
-                                    if (task.isSuccessful()) {
-                                        mDatabase.child("Users").child("hijo").child(idUser).child("Term").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<DataSnapshot> task) {
-                                                String Acceptance = task.getResult().getValue(String.class);
-                                                //Comprobamos si los términos han sido aceptados, si han sido (1), el usuario va directamente a La Actividad INicial del Usuario,
-                                                // si no, se le lleva de uevo a Terminos y condiciones para que los acepte
-                                                if (Acceptance.equals("1")) {
-                                                    Intent intent = new Intent(InicioDeSesionUsuario.this, PrincipalHijoActivity.class);
-                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                                    startActivity(intent);
-                                                } else {
-                                                    Intent intent = new Intent(InicioDeSesionUsuario.this, TerminosCondicionesHijo.class);
-                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                                    startActivity(intent);
-                                                }
+                        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
+                            @Override
+                            public void onComplete(@NonNull Task<String> task) {
+                                String token = task.getResult();
+                                if (usuario.equals("hijo")) {
+                                    //Comprobamos que el hijo que ha sido elegido rpeviamente y el que se presenta en la base de datos son el mismo
+                                    mDatabase.child("Users").child("hijo").child(idUser).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<DataSnapshot> task) {
+                                            if (task.isSuccessful()) {
+                                                mDatabase.child("Users").child("hijo").child(idUser).child("token").setValue(token);
+                                                mDatabase.child("Users").child("hijo").child(idUser).child("Term").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<DataSnapshot> task) {
+                                                        String Acceptance = task.getResult().getValue(String.class);
+                                                        //Comprobamos si los términos han sido aceptados, si han sido (1), el usuario va directamente a La Actividad INicial del Usuario,
+                                                        // si no, se le lleva de uevo a Terminos y condiciones para que los acepte
+                                                        if (Acceptance.equals("1")) {
+                                                            Intent intent = new Intent(InicioDeSesionUsuario.this, PrincipalHijoActivity.class);
+                                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                                            startActivity(intent);
+                                                        } else {
+                                                            Intent intent = new Intent(InicioDeSesionUsuario.this, TerminosCondicionesHijo.class);
+                                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                                            startActivity(intent);
+                                                        }
+                                                    }
+                                                });
+                                            } else {
+                                                Toast.makeText(InicioDeSesionUsuario.this, "Por favor identificate como padre para poder Iniciar Sesión correctamente", Toast.LENGTH_SHORT).show();
                                             }
-                                        });
-                                    } else {
-                                        Toast.makeText(InicioDeSesionUsuario.this, "Por favor identificate como padre para poder Iniciar Sesión correctamente", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                        } else {
-                            //Al igual que previamente comprobamos que los tipos de usuario coincidan esta vez para padre
-                            mDatabase.child("Users").child("hijo").child(idUser).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<DataSnapshot> task) {
-                                    if (task.isSuccessful()) {
-                                        mDatabase.child("Users").child("padre").child(idUser).child("Term").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<DataSnapshot> task) {
-                                                String Acceptance = task.getResult().getValue(String.class);
-                                                if (Acceptance.equals("1")) {
-                                                    Intent intent = new Intent(InicioDeSesionUsuario.this, PrincipalPadreActivity.class);
-                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                                    startActivity(intent);
-                                                } else {
-                                                    Intent intent = new Intent(InicioDeSesionUsuario.this, TerminosCondicionesPadre.class);
-                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                                    startActivity(intent);
-                                                }
+                                        }
+                                    });
+                                } else {
+                                    //Al igual que previamente comprobamos que los tipos de usuario coincidan esta vez para padre
+                                    mDatabase.child("Users").child("hijo").child(idUser).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<DataSnapshot> task) {
+                                            if (task.isSuccessful()) {
+                                                mDatabase.child("Users").child("padre").child(idUser).child("token").setValue(token);
+                                                mDatabase.child("Users").child("padre").child(idUser).child("Term").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<DataSnapshot> task) {
+                                                        String Acceptance = task.getResult().getValue(String.class);
+                                                        if (Acceptance.equals("1")) {
+                                                            Intent intent = new Intent(InicioDeSesionUsuario.this, PrincipalPadreActivity.class);
+                                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                                            startActivity(intent);
+                                                        } else {
+                                                            Intent intent = new Intent(InicioDeSesionUsuario.this, TerminosCondicionesPadre.class);
+                                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                                            startActivity(intent);
+                                                        }
+                                                    }
+                                                });
+                                            } else {
+                                                Toast.makeText(InicioDeSesionUsuario.this, "Por favor identificate como hijo para poder Iniciar Sesión correctamente", Toast.LENGTH_SHORT).show();
                                             }
-                                        });
-                                    }
-                                    else{
-                                        Toast.makeText(InicioDeSesionUsuario.this, "Por favor identificate como hijo para poder Iniciar Sesión correctamente", Toast.LENGTH_SHORT).show();
-                                    }
+                                        }
+                                    });
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 }
             });

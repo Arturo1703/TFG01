@@ -38,5 +38,12 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
             android:src="@drawable/ic_launcher_background" />
+        <Button
+            android:id="@+id/mensajeHijo"
+            android:layout_width="150dp"
+            android:layout_height="60dp"
+            android:layout_below="@+id/pflistahijo"
+            android:layout_centerHorizontal="true"
+            android:text="Mandar Mensaje" />
     </RelativeLayout>
 </androidx.cardview.widget.CardView>
