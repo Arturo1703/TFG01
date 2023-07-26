@@ -17,7 +17,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.tfg01.actividades.BuzonPadre;
 import com.example.tfg01.includes.ListaHijosRVAdapter;
 import com.example.tfg01.R;
 import com.example.tfg01.actividades.MainActivity;
@@ -273,7 +272,7 @@ public class PrincipalPadreActivity extends AppCompatActivity {
                         String idUser = auth.getCurrentUser().getUid();
                         Mensaje mensaje = new Mensaje(idMensaje, idUser, id, fecha, text.getText().toString());
                         mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
-                        mDatabase.child("Users").child("hijo").child(id).child("Mensajes").child(idMensaje).push().setValue(mensaje).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        mDatabase.child("Users").child("hijo").child(id).child("Mensajes").child(idMensaje).setValue(mensaje).addOnCompleteListener(new OnCompleteListener<Void>() {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
                                 if(task.isSuccessful())

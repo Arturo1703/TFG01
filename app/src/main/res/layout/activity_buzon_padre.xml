@@ -4,11 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".actividades.Buzon">
+    tools:context=".actividades.Padre.BuzonPadre">
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="10dp"
-        android:id="@+id/recyclerViewBuzon"/>
+        android:id="@+id/recyclerViewBuzonPadre"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

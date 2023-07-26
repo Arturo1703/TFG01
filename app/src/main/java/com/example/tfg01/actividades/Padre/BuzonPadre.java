@@ -1,15 +1,13 @@
-package com.example.tfg01.actividades;
+package com.example.tfg01.actividades.Padre;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,8 +15,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.tfg01.R;
-import com.example.tfg01.actividades.Padre.MapaPadre;
-import com.example.tfg01.actividades.Padre.PrincipalPadreActivity;
+import com.example.tfg01.actividades.hijo.BuzonHijo;
 import com.example.tfg01.includes.ListaMensajesRVAAdapter;
 import com.example.tfg01.modelos.Mensaje;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -44,13 +41,13 @@ public class BuzonPadre extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_buzon);
+        setContentView(R.layout.activity_buzon_padre);
         createRecyclerView();
     }
 
     private void createRecyclerView() {
         parent = findViewById(R.id.layoutPrincipalPadre);
-        mensajerecyclerView = findViewById(R.id.recyclerViewPadreMain);
+        mensajerecyclerView = findViewById(R.id.recyclerViewBuzonPadre);
         recyclerAdapter = new ListaMensajesRVAAdapter(this);
         auth = FirebaseAuth.getInstance();
         String idUser = auth.getCurrentUser().getUid();
@@ -75,7 +72,6 @@ public class BuzonPadre extends AppCompatActivity {
                                 if(task.isSuccessful()) {
                                     mensaje.setId(idMensaje);
                                     for (DataSnapshot ds : task.getResult().getChildren()) {
-                                        String Origen, Destinatario, Fecha, Mensaje;
                                         if (ds.getKey().equals("Origen"))
                                             mensaje.setOrigen(ds.getValue(String.class));
                                         else if (ds.getKey().equals("Destinatario"))
@@ -83,7 +79,7 @@ public class BuzonPadre extends AppCompatActivity {
                                         else if (ds.getKey().equals("Fecha"))
                                             mensaje.setFecha(ds.getValue(String.class));
                                         else if (ds.getKey().equals("Mensaje"))
-                                            mensaje.setFecha(ds.getValue(String.class));
+                                            mensaje.setMensaje(ds.getValue(String.class));
                                     }
                                     //anadimos la informacion del hijo al arraylist de hijos para uego pasarsela al adaptador
                                     listaMensaje.add(mensaje);
@@ -144,17 +140,18 @@ public class BuzonPadre extends AppCompatActivity {
                                     mensaje.setId(idMensaje);
                                     mensaje.setFecha(fecha);
                                     mensaje.setMensaje(text.getText().toString());
-                                    String IdHijo;
+                                    String IdHijo = null;
                                     for (DataSnapshot ds : task.getResult().getChildren()) {
                                         String Origen, Destinatario, Fecha, Mensaje;
-                                        if (ds.getKey().equals("Origen"))
+                                        if (ds.getKey().equals("origen")){
                                             mensaje.setDestinatario(ds.getValue(String.class));
-                                        else if (ds.getKey().equals("Destinatario")) {
-                                            mensaje.setOrigen(ds.getValue(String.class));
                                             IdHijo = ds.getValue(String.class);
                                         }
+                                        else if (ds.getKey().equals("destinatario"))
+                                            mensaje.setOrigen(ds.getValue(String.class));
+
                                     }
-                                    mDatabase.child("Users").child("hijo").child(id).child("Mensajes").child(idMensaje).push().setValue(mensaje).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    mDatabase.child("Users").child("hijo").child(IdHijo).child("Mensajes").child(idMensaje).setValue(mensaje).addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if(task.isSuccessful())
@@ -182,6 +179,9 @@ public class BuzonPadre extends AppCompatActivity {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
                     Toast.makeText(BuzonPadre.this, "Mensaje borrado con exito", Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(BuzonPadre.this, BuzonPadre.class);
+                    startActivity(intent);
+                    finish();
                 }
             });
 

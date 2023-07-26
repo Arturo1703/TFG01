@@ -104,7 +104,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                         public void onComplete(@NonNull Task<DataSnapshot> task) {
                             String PadreToken;
                             PadreToken = task.getResult().getValue(String.class);
-                            FirebaseMessaging.getInstance().send(
+                            /*FirebaseMessaging.getInstance().send(
                                     RemoteMessage.(PadreToken)
                                             .setMessageId(UUID.randomUUID().toString())
                                             .setNotification(new Notification.Builder()
@@ -112,7 +112,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                                                     .setBody(uid)
                                                     .build())
                                             .build()
-                            );
+                            );*/
                             /*JSONObject json = new JSONObject();
                             try {
                                 json.put("to", PadreToken);

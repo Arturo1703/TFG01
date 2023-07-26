@@ -42,6 +42,7 @@ import com.example.tfg01.modelos.Video;
 import com.example.tfg01.proveedores.AuthProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -57,6 +58,8 @@ import java.util.ArrayList;
 public class PrincipalHijoActivity extends AppCompatActivity {
 
     Button logOut, cancelJob;
+
+    FloatingActionButton mailButton;
     AuthProvider authp;
     Intent mapIntent = new Intent();
     LocationUpdate update = new LocationUpdate();
@@ -79,6 +82,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
         cancelJob = findViewById(R.id.cancelarScehdule);
         drawerLayout = findViewById(R.id.DrawerLayout);
         navigationView = findViewById(R.id.Navigation_View);
+        mailButton = findViewById(R.id.buzonButonHijo);
         toolbar = findViewById(R.id.toolbar);
         authp = new AuthProvider();
 
@@ -108,6 +112,14 @@ public class PrincipalHijoActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 cancelarServicioGeolocalizacion();
+            }
+        });
+        mailButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(PrincipalHijoActivity.this, BuzonHijo.class);
+                startActivity(intent);
+                finish();
             }
         });
 
