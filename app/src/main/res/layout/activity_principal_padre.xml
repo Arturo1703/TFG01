@@ -6,13 +6,16 @@
     android:layout_height="match_parent"
     android:id="@+id/layoutPrincipalPadre"
     tools:context=".actividades.Padre.PrincipalPadreActivity">
-
+    <include layout ="@layout/menu_bar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Cerrar Sesion"
         android:backgroundTint="@color/gris"
-        android:id="@+id/cerrarSesionPadre" />
+        android:id="@+id/cerrarSesionPadre"
+        android:layout_marginVertical="60dp"/>
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"

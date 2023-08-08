@@ -11,12 +11,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.tfg01.R;
+import com.example.tfg01.actividades.hijo.BuzonHijo;
 import com.example.tfg01.actividades.hijo.PrincipalHijoActivity;
 import com.example.tfg01.actividades.hijo.RegistroHijo;
 import com.example.tfg01.modelos.Hijo;
 import com.example.tfg01.modelos.Padre;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 //tambien chequea que no se introduce un hijo ya relacionado.
 public class RelacionarHijo extends AppCompatActivity {
 
+    FloatingActionButton home;
     TextView emailHijo;
     Button vincularbut, terminarbut;
 
@@ -44,6 +47,7 @@ public class RelacionarHijo extends AppCompatActivity {
         emailHijo = findViewById(R.id.emailHijoVin);
         vincularbut = findViewById(R.id.VincularHijo);
         terminarbut = findViewById(R.id.TerminarVincular);
+        home = findViewById(R.id.homeRelacionarPadre);
         idNiño = "";
 
         vincularbut.setOnClickListener(new View.OnClickListener() {
@@ -63,6 +67,14 @@ public class RelacionarHijo extends AppCompatActivity {
                 Intent intent = new Intent(RelacionarHijo.this, PrincipalPadreActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
+            }
+        });
+        home.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(RelacionarHijo.this, PrincipalPadreActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
     }

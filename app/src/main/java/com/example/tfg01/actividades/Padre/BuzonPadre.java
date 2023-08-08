@@ -16,10 +16,12 @@ import android.widget.Toast;
 
 import com.example.tfg01.R;
 import com.example.tfg01.actividades.hijo.BuzonHijo;
+import com.example.tfg01.actividades.hijo.PrincipalHijoActivity;
 import com.example.tfg01.includes.ListaMensajesRVAAdapter;
 import com.example.tfg01.modelos.Mensaje;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
@@ -33,6 +35,7 @@ public class BuzonPadre extends AppCompatActivity {
 
     View parent;
 
+    FloatingActionButton home;
     RecyclerView mensajerecyclerView;
     ListaMensajesRVAAdapter recyclerAdapter;
     DatabaseReference mDatabase;
@@ -42,11 +45,19 @@ public class BuzonPadre extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_buzon_padre);
+        home = findViewById(R.id.homeBuzonPadre);
+        home.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(BuzonPadre.this, PrincipalPadreActivity.class);
+                startActivity(intent);
+            }
+        });
         createRecyclerView();
     }
 
     private void createRecyclerView() {
-        parent = findViewById(R.id.layoutPrincipalPadre);
+        parent = findViewById(R.id.layoutBuzonPadre);
         mensajerecyclerView = findViewById(R.id.recyclerViewBuzonPadre);
         recyclerAdapter = new ListaMensajesRVAAdapter(this);
         auth = FirebaseAuth.getInstance();
@@ -61,7 +72,7 @@ public class BuzonPadre extends AppCompatActivity {
                     long CurrentMensaje = 0;
                     for (DataSnapshot ds : task.getResult().getChildren()) {
                         CurrentMensaje++;
-                        String idMensaje = ds.getValue(String.class);
+                        String idMensaje = ds.getKey();
                         Mensaje mensaje = new Mensaje();
                         long finalCurrentMensaje = CurrentMensaje;
                         //A partir del id buscamos informacion del hijo par poder mostrarla en las Tarjetas
@@ -72,13 +83,13 @@ public class BuzonPadre extends AppCompatActivity {
                                 if(task.isSuccessful()) {
                                     mensaje.setId(idMensaje);
                                     for (DataSnapshot ds : task.getResult().getChildren()) {
-                                        if (ds.getKey().equals("Origen"))
+                                        if (ds.getKey().equals("origen"))
                                             mensaje.setOrigen(ds.getValue(String.class));
-                                        else if (ds.getKey().equals("Destinatario"))
+                                        else if (ds.getKey().equals("destinatario"))
                                             mensaje.setDestinatario(ds.getValue(String.class));
-                                        else if (ds.getKey().equals("Fecha"))
+                                        else if (ds.getKey().equals("fecha"))
                                             mensaje.setFecha(ds.getValue(String.class));
-                                        else if (ds.getKey().equals("Mensaje"))
+                                        else if (ds.getKey().equals("mensaje"))
                                             mensaje.setMensaje(ds.getValue(String.class));
                                     }
                                     //anadimos la informacion del hijo al arraylist de hijos para uego pasarsela al adaptador

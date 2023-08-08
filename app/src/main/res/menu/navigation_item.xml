@@ -6,11 +6,6 @@
         android:icon="@drawable/ic_baseline_home_24"
         />
     <item
-        android:id="@+id/MenuPerfil"
-        android:title="Perfil"
-        android:icon="@drawable/ic_baseline_person"
-        />
-    <item
         android:id="@+id/MenuGeolocalizacion"
         android:title="Geolocalizacon"
         android:icon="@drawable/ic_baseline_my_location"

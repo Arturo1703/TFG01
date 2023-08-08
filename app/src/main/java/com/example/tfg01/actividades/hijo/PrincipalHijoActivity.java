@@ -134,8 +134,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
 
                 if (id == R.id.MenuInicio) {
 
-                } else if (id == R.id.MenuPerfil) {
-
                 } else if (id == R.id.MenuAjustes) {
 
                 } else {

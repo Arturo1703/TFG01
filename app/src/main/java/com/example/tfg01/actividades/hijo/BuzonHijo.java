@@ -15,10 +15,13 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.tfg01.R;
+import com.example.tfg01.actividades.Padre.BuzonPadre;
+import com.example.tfg01.actividades.Padre.PrincipalPadreActivity;
 import com.example.tfg01.includes.ListaMensajesRVAAdapter;
 import com.example.tfg01.modelos.Mensaje;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
@@ -32,6 +35,8 @@ public class BuzonHijo extends AppCompatActivity {
 
     View parent;
 
+    FloatingActionButton home;
+
     RecyclerView mensajerecyclerView;
     ListaMensajesRVAAdapter recyclerAdapter;
     DatabaseReference mDatabase;
@@ -41,11 +46,20 @@ public class BuzonHijo extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_buzon_hijo);
+        home = findViewById(R.id.homeBuzonHijo);
+        home.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(BuzonHijo.this, PrincipalHijoActivity.class);
+                startActivity(intent);
+            }
+        });
         createRecyclerView();
     }
 
     private void createRecyclerView() {
-        parent = findViewById(R.id.layoutPrincipalPadre);
+        parent = findViewById(R.id.layoutBuzonHijo);
+
         mensajerecyclerView = findViewById(R.id.recyclerViewBuzonHijo);
         recyclerAdapter = new ListaMensajesRVAAdapter(this);
         auth = FirebaseAuth.getInstance();
@@ -142,7 +156,6 @@ public class BuzonHijo extends AppCompatActivity {
                                     mensaje.setMensaje(text.getText().toString());
                                     String IdPadre = null;
                                     for (DataSnapshot ds : task.getResult().getChildren()) {
-                                        String Origen, Destinatario, Fecha, Mensaje;
                                         if (ds.getKey().equals("origen")){
                                             mensaje.setDestinatario(ds.getValue(String.class));
                                             IdPadre = ds.getValue(String.class);
