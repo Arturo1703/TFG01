@@ -9,15 +9,13 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlarmManager;
-import android.app.job.JobInfo;
-import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -35,10 +33,9 @@ import com.example.tfg01.actividades.MainActivity;
 import com.example.tfg01.includes.FolderHelper;
 import com.example.tfg01.includes.KeyFrames;
 import com.example.tfg01.includes.LocationUpdate;
+import com.example.tfg01.includes.ModelClassifier;
 import com.example.tfg01.includes.MyFirebaseMessagingService;
-import com.example.tfg01.includes.ServicioGeolocalizacion;
 import com.example.tfg01.modelos.Tiempo;
-import com.example.tfg01.modelos.Video;
 import com.example.tfg01.proveedores.AuthProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -50,6 +47,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 //Esta es la actividad principal del Hijo, aqui se porducirán dos servicios princiaples:
@@ -64,6 +63,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     Intent mapIntent = new Intent();
     LocationUpdate update = new LocationUpdate();
     private static final String TAG = "MainActivity";
+    private static double PORN_CLASS_THRESHOLD = 0.75;
 
     DrawerLayout drawerLayout;
     NavigationView navigationView;
@@ -134,6 +134,8 @@ public class PrincipalHijoActivity extends AppCompatActivity {
 
                 if (id == R.id.MenuInicio) {
 
+                } else if (id == R.id.MenuPerfil) {
+
                 } else if (id == R.id.MenuAjustes) {
 
                 } else {
@@ -161,7 +163,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 101);
 
                 //Volvemos a chequear por si nos los han aceptado una vez hecho el request
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
                     //Una vez tengamos los permisos buscamos un provider que no devuelva un nulo, (lo hacemos asi porque algunos providers
                     //devuelven nulo aun indicando que son usables).
@@ -365,7 +367,16 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                     }
                     if(!padres.isEmpty()) {
                         //Analizar videos del hijo
-                        //Bloquear video y mandar alerta a los padres
+                        //bloquear video y mandar alerta a los padres
+                        /*
+                            Se ocultará el archivo o se puede ir a una carpeta. Para cuando llegue una foto explicita,
+                            se cifra (bloquea) y luego el padre con una contraseña, pueda desbloquear. Tambien se puede
+                            ocultar o mover a otra carpeta y se oculta. El padre va a ver el móvil del hijo (fisicamente)
+                            y lo desbloquea a mano
+
+                            De momento se borra
+
+                         */
                         //Instancia del helper de las carpetas que se analizan en el dispositivo
 
                         FolderHelper folderHelper = FolderHelper.getInstance(PrincipalHijoActivity.this,PrincipalHijoActivity.this);
@@ -376,18 +387,86 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                         //TODO quitar la mayoria de los videos de appFolder y anañirlos en las appFolder + rutas de las carpetas originales
                         ArrayList<String> folder_revisar = new ArrayList();
 
-                        //Analisis de la carpeta de la camara en DCIM
-                        analizarCarpeta(FolderHelper.DCIM_CAMERA_FOLDER, appFolder);
+                        //TODO mirar que ruta devuelve appFolder + ... por si es o no appFolder+"/...."
+                        //Extraccion de la carpeta de la camara en DCIM
+                        Thread threadDCIM = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
+                                    extraerKeyFrames(FolderHelper.DCIM_CAMERA_FOLDER, appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                                }
+                            }
+                        });
 
-                        //Analisis de la carpeta de descargas
-                        analizarCarpeta(FolderHelper.DOWNLOADS_FOLDER,appFolder);
-                        //Analisis de la carpeta de telegram
-                        //  Para versiones antiguas de telegram la ruta es distinta,
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION,appFolder);
-                        analizarCarpeta(FolderHelper.TELEGRAM_FOLDER,appFolder);
+                        //Extraccion de la carpeta de descargas
+                        Thread threadDownload = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
+                                    extraerKeyFrames(FolderHelper.DOWNLOADS_FOLDER, appFolder + FolderHelper.DOWNLOADS_FOLDER);
+                                }
+                            }
+                        });
 
+                        // Extraccion de la carpeta de telegram
+                        // Para versiones antiguas de telegram la ruta es distinta,
+                        Thread threadTelegram = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
+                                    extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION, appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
+                                    extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER, appFolder + FolderHelper.TELEGRAM_FOLDER);
+                                }
+                            }
+                        });
+
+
+                        //Empezar anasis
+                        threadDCIM.start();
+                        threadDownload.start();
+                        threadTelegram.start();
+
+                        // Esperar a que los hilos anteriores finalicen
+                        try {
+                            threadDCIM.join();
+                            threadDownload.join();
+                            threadTelegram.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        //Analisis de videos de forma secuencial con el modelo
+                        Thread threadModelo = new Thread(new Runnable() {
+                            @Override
+                            public void run(){
+                                //Analisis carpeta Camera
+                                if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
+                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                                    procesarRuta(rutaImagen, FolderHelper.DCIM_CAMERA_FOLDER);
+                                }
+                                //Analisis carpeta Downloads
+                                if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
+                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DOWNLOADS_FOLDER);
+                                    procesarRuta(rutaImagen, FolderHelper.DOWNLOADS_FOLDER);
+                                }
+                                //Analisis carpeta Telegram
+                                if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
+                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                    procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
+                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER);
+                                    procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER);
+                                }
+
+
+                            }
+                        });
 
                         //Borrar video si es explicito y mandar alerta a los padres
+
+                        threadModelo.start();
+
                     }
                 }
             }
@@ -397,51 +476,120 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     //función recursiva que busca en una carpeta y subcarpetas, los archivos que son videos para
     //su posterior extracción de KeyFrames
 
-    private void analizarCarpeta(final String origFolder,final String destFolder) {
+    private void extraerKeyFrames(final String origFolder, final String destFolder) {
+        try{
+            File f = new File(origFolder);
 
+            File[] archivos = f.listFiles();
 
-        //Utilizamos hilos para mejorar el rendimiento
-        //TODO mirar si este hilo empeora el rendimiento por el acceso silmultaneo de lectura en archivos
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    File f = new File(origFolder);
+            // Utilizamos la clase MediaMetadataRetriever para comprobar que efectivamente el
+            // archivo que se borra es un video independientemente de su extensión
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
-                    File[] archivos = f.listFiles();
-
-
-                    // Utilizamos la clase MediaMetadataRetriever para comprobar que efectivamente el
-                    // archivo que se borra es un video independientemente de su extensión
-                    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-
-                    for (File file : archivos) {
-                        if (file.isFile()) {
-                            try {
-                                retriever.setDataSource(file.getAbsolutePath());
-                                String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-                                if (mime != null && mime.startsWith("video/")) {
-                                    Log.v("HijoActivity", "Fichero ejecutado por comando:\n\n\n       "+file.getName()+"\n");
-                                    KeyFrames.executeComandoKeyFrames(file.getAbsolutePath(), destFolder, file.getName());
-                                }
-                            } catch (Exception e) {
-                                Toast.makeText(PrincipalHijoActivity.this, "Error", Toast.LENGTH_SHORT).show();
-                                e.printStackTrace();
-                            }
-                        }else if(file.isDirectory()){
-                            analizarCarpeta(file.getAbsolutePath(),destFolder);
+            for (File file : archivos) {
+                if (file.isFile()) {
+                    try {
+                        retriever.setDataSource(file.getAbsolutePath());
+                        String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+                        if (mime != null && mime.startsWith("video/")) {
+                            Log.v("HijoActivity", "Fichero ejecutado por comando:\n\n\n       "+file.getName()+"\n");
+                            KeyFrames.executeComandoKeyFrames(file.getAbsolutePath(), destFolder, file.getName());
                         }
+                    } catch (Exception e) {
+                        Toast.makeText(PrincipalHijoActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
                     }
-
-                    retriever.release();
-
-                }catch (Exception e){
-                    Log.e("HijoActivity", "Error al ejecutar analizarCarpeta en la ruta "
-                            +origFolder+": \n"+e.getLocalizedMessage());
-                    e.fillInStackTrace();
+                }else if(file.isDirectory()){
+                    extraerKeyFrames(file.getAbsolutePath(),destFolder+ "\\" + file.getName());
                 }
             }
-        }).start();
+
+            retriever.release();
+
+        }catch (Exception e){
+            Log.e("HijoActivity", "Error al ejecutar analizarCarpeta en la ruta "
+                    +origFolder+": \n"+e.getLocalizedMessage());
+            e.fillInStackTrace();
+        }
+
 
     }
+
+    /*
+        Esta implementación asume que todas las imágenes en la carpeta origen y sus subcarpetas son archivos JPG.
+        Si hay otros tipos de archivos, serán ignorados. También, si la carpeta contiene subcarpetas,
+        este método las explorará recursivamente.
+     */
+    private String analisisContenidoExplicito(final String origFolder) {
+        File folder = new File(origFolder);
+        if (folder.exists() && folder.isDirectory()) {
+            for (File file : folder.listFiles()) {
+                if (file.isDirectory()) {
+                    String result = analisisContenidoExplicito(file.getAbsolutePath());
+                    if (result != null) {
+                        return result; // Retorna la ruta si se encuentra una imagen clasificada como "porn"
+                    }
+                } else if (file.isFile() && file.getName().toLowerCase().endsWith(".jpg")) {
+                    try {
+                        ModelClassifier modelClassifier = new ModelClassifier(getApplicationContext());
+
+                        // Leer la imagen y convertirla en ByteBuffer
+                        Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+                        ByteBuffer byteBuffer = ModelClassifier.convertirBitmapAByteBuffer(bitmap);
+
+                        ModelClassifier.ClassificationResult result = modelClassifier.classify(byteBuffer);
+
+                        modelClassifier.close();
+
+                        // Retorna la ruta si se clasifica como "porn" con más del 75% de confianza
+                        if ("porn".equals(result.label) && (result.confidence > PORN_CLASS_THRESHOLD)) {
+                            return file.getAbsolutePath();
+                        }
+                    } catch (IOException e) {
+                        Log.e("HijoActivity", "Error al ejecutar analisisContenidoExplicito en la ruta "
+                                +origFolder+": \n"+e.getLocalizedMessage());
+                        e.fillInStackTrace();
+                    }
+                }
+            }
+        }
+        return null; // Retorna null si no se encuentra ninguna imagen clasificada como "porn"
+    }
+
+    /*
+        Metodo auxiliar para procesar rutaImagen si es pornografica. Si lo es, es decir que el algoritmo
+        ha devuelto una ruta != null, el video correspondiente a la imagen se borra y se lanza un mensaje
+
+        En caso de que la ruta != null se tiene que enviar una alerta al tutor
+     */
+
+    private void procesarRuta(String rutaImagen, String rutaPadre){
+        if (rutaImagen != null) {
+            //TODO mandar alerta al tutor
+
+            String rutaVideo = FolderHelper.obtenerRutaVideo(rutaImagen, rutaPadre);
+            if (rutaVideo != null) {
+                // ruta al vídeo para proceder a eliminarlo
+                File videoFile = new File(rutaVideo);
+                String videoName = videoFile.getName();
+                boolean deleted = videoFile.delete();
+                if (deleted) {
+                    Log.i("HijoActivity",
+                            "Eliminado video pornografico: "
+                                    + videoName);
+                } else {
+                    Log.e("HijoActivity",
+                            "Error al intentar eliminar un video pornografico: "
+                                    + videoName);
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
 }

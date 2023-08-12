@@ -35,6 +35,8 @@ public class KeyFrames {
      */
     public static void executeComandoKeyFrames(String url_video, String destFolder, String fileName) throws Exception {
         try {
+            Log.v("FFmpeg", "entra en executeComandoKeyFrames para "+ url_video);
+
             String subFolder = fileName;
             String filePath = "";
             String fileExtn = ".jpg";
@@ -71,6 +73,7 @@ public class KeyFrames {
                                     @Override
                                     public void apply(FFmpegSession session) {
                                         if (ReturnCode.isSuccess(session.getReturnCode())) {
+
                                             Log.v("FFmpeg", "RESULT - output: \n" + fileName + "\n" + session.getOutput());
 
                                             //Llamada al comparador de frames de OpenCV

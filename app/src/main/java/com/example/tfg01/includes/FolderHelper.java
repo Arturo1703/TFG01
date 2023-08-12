@@ -42,6 +42,7 @@ public class FolderHelper {
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/";
 
     public static FolderHelper getInstance(Activity a, Context c){
+        //TODO poner los .nomedia
         return new FolderHelper(a,c);
     }
 
@@ -87,6 +88,32 @@ public class FolderHelper {
     }
 
 
+    public static boolean directoryExists(final String path){
+        File dir = new File(path);
+
+        return(!dir.exists()) && (dir.isDirectory());
+    }
+
+    public static String obtenerRutaVideo(String rutaImagen, String rutaCarpetaPadre) {
+        File imagenFile = new File(rutaImagen);
+        StringBuilder rutaVideo = new StringBuilder(rutaCarpetaPadre);
+
+        // Subir en la jerarquía de carpetas desde la imagen hasta encontrar la "rutaCarpetaPadre"
+        File carpetaActual = imagenFile.getParentFile();
+        while (carpetaActual != null && !carpetaActual.getAbsolutePath().equals(rutaCarpetaPadre)) {
+            rutaVideo.insert(rutaCarpetaPadre.length(), "/" + carpetaActual.getName());
+            carpetaActual = carpetaActual.getParentFile();
+        }
+
+        if (carpetaActual == null) {
+            return null; // "rutaCarpetaPadre" no fue encontrada en la jerarquía de la "rutaImagen"
+        }
+
+        return rutaVideo.toString();
+    }
+
+
+
 
     private boolean isExternalStorageWritable() {
         return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
@@ -117,6 +144,11 @@ public class FolderHelper {
             }
         }
     }
+
+
+
+
+
 
 
 
