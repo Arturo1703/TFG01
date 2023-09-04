@@ -118,12 +118,18 @@ public class PrincipalPadreActivity extends AppCompatActivity {
                             @Override
                             public void onComplete(@NonNull Task<DataSnapshot> task) {
                                 hijo.setId(idNiño);
+                                int alertarHijo = 0;
                                 for (DataSnapshot ds : task.getResult().getChildren()) {
+                                    if(ds.getKey().equals("alerta"))
+                                        if(ds.getValue(String.class).equals("1"))
+                                            alertarHijo = 1;
                                     if (ds.getKey().equals("email"))
                                         hijo.setEmail(ds.getValue(String.class));
                                     if (ds.getKey().equals("nombre"))
                                         hijo.setNombre(ds.getValue(String.class));
                                 }
+                                if (alertarHijo == 1)
+                                    mandarAlerta(hijo.getNombre(), hijo.getId());
                                 //anadimos la informacion del hijo al arraylist de hijos para uego pasarsela al adaptador
                                 listaHijos.add(hijo);
                                 if (Numhijos == finalCurrentHijo) {
@@ -288,5 +294,31 @@ public class PrincipalPadreActivity extends AppCompatActivity {
             AlertDialog dialog = builder.create();
             dialog.show();
         }
+    }
+    private void mandarAlerta(String NombreHijo, String IdHIjo){
+
+        android.app.AlertDialog.Builder alerta = new AlertDialog.Builder(PrincipalPadreActivity.this);
+        alerta.setMessage(("Se ha encontrado en el dispositivo de " + NombreHijo + " un vídeo o imagen de posible carácter sexual y se ha procedido a borrarlo" +
+                "¿El movil del menor contenia realmente videos o imagenes de caracter sexual?"))
+                .setCancelable(false)
+                .setPositiveButton("Si", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Aquí se alertaria a la policia
+                        mDatabase.child("Users").child("hijo").child(IdHIjo).child("alerta").setValue(0 + "");
+                        dialog.cancel();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mDatabase.child("Users").child("hijo").child(IdHIjo).child("alerta").setValue(0 + "");
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog titulo = alerta.create();
+        titulo.setTitle("¡ALERTA!");
+        titulo.setIcon(R.drawable.ic_alert);
+        titulo.show();
     }
 }

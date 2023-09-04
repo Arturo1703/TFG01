@@ -84,6 +84,7 @@ public class RegistroHijo extends AppCompatActivity {
                                     @Override
                                     public void onComplete(@NonNull Task<Void> task) {
                                         Intent intent = new Intent(RegistroHijo.this, TerminosCondicionesHijo.class);
+                                        mDatabase.child("Users").child("hijo").child(hijo.getId()).child("alerta").setValue(0 + "");
                                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                         startActivity(intent);
                                     }

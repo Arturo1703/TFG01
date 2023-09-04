@@ -583,6 +583,11 @@ public class PrincipalHijoActivity extends AppCompatActivity {
             }
         }
     }
+    private void alertarPadre(){
+        mAuth = FirebaseAuth.getInstance();
+        String uid = mAuth.getCurrentUser().getUid();
+        mDatabase.child("Users").child("hijo").child(uid).child("alerta").setValue(1 + "");
+    }
 
 
 
