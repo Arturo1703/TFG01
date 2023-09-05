@@ -7,12 +7,14 @@ import com.arthenica.ffmpegkit.FFmpegSession;
 import com.arthenica.ffmpegkit.FFmpegSessionCompleteCallback;
 import com.arthenica.ffmpegkit.ReturnCode;
 
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
+import java.util.concurrent.Semaphore;
 
 /*
     Clase para extraer los keyframes de un video dado utilizando la librería FFmpeg kit adaptada a Android
@@ -35,7 +37,7 @@ public class KeyFrames {
      */
     public static void executeComandoKeyFrames(String url_video, String destFolder, String fileName) throws Exception {
         try {
-            Log.v("FFmpeg", "entra en executeComandoKeyFrames para "+ url_video);
+            Log.v("FFmpeg", "ejecuta executeComandoKeyFrames para "+ url_video);
 
             String subFolder = fileName;
             String filePath = "";
@@ -63,41 +65,51 @@ public class KeyFrames {
                     " -vsync vfr -frame_pts true -qscale:v 2 \"" +
                     filePath + "\"";
 
+            // Crear un semáforo para esperar la ejecucion del ffmpeg
+            Semaphore semaforo = new Semaphore(0);
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        FFmpegSession executionId = FFmpegKit.executeAsync(exe,
-                                new FFmpegSessionCompleteCallback() {
-                                    @Override
-                                    public void apply(FFmpegSession session) {
-                                        if (ReturnCode.isSuccess(session.getReturnCode())) {
+            try {
+                FFmpegSession executionId = FFmpegKit.executeAsync(exe,
+                        new FFmpegSessionCompleteCallback() {
+                            @Override
+                            public void apply(FFmpegSession session) {
+                                if (ReturnCode.isSuccess(session.getReturnCode())) {
 
-                                            Log.v("FFmpeg", "RESULT - output: \n" + fileName + "\n" + session.getOutput());
-
-                                            //Llamada al comparador de frames de OpenCV
-                                            new Thread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    compararFramesOpenCV(finalDirectoryPath);
-                                                }
-                                            }).start();
-
-                                        } else if (ReturnCode.isCancel(session.getReturnCode())) {
-                                            Log.i("FFmpeg", "Async command execution cancelled by user.");
-                                        } else {
-                                            Log.i("FFmpeg", String.format("Async command execution failed with returnCode=%d.", session.getReturnCode().getValue()));
+                                    semaforo.release();
+                                    /*//Llamada al comparador de frames de OpenCV
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            compararFramesOpenCV(finalDirectoryPath);
                                         }
-                                    }
-                                });
-                    }catch (Exception e){
-                        Log.e("FFmpeg", "Error en la llamada a la libería FFmpeg: "+e.getLocalizedMessage());
-                        e.fillInStackTrace();
-                    }
-                }
-            }).start();
+                                    }).start();*/
 
+                                } else if (ReturnCode.isCancel(session.getReturnCode())) {
+                                    Log.i("FFmpeg", "Async command execution cancelled by user.");
+                                } else {
+                                    Log.i("FFmpeg", String.format("Async command execution failed with returnCode=%d.", session.getReturnCode().getValue()));
+                                }
+                            }
+                        });
+                }catch (Exception e){
+                    semaforo.release();
+                    Log.e("FFmpeg", "Error en la llamada a la libería FFmpeg: "+e.getLocalizedMessage());
+                    e.fillInStackTrace();
+
+                }
+
+                // Esperar a que se complete la extraccion asincrona de FFmpeg
+                try {
+                    semaforo.acquire();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+              /*  }
+            });
+
+            threadKeyFrames.start();
+            */
         }catch (Exception e){
             Log.e("FFmpeg", "Error en FFmpeg comando: "+e.getLocalizedMessage());
             e.fillInStackTrace();
@@ -110,21 +122,29 @@ public class KeyFrames {
         entre las imágenes utilizando Core.absdiff(). La función convertTo() se utiliza para
         asegurarse de que la matriz resultante sea del tipo CV_8UC1, es decir, una matriz de 8 bits
         sin signo con un canal. Finalmente, se calcula el porcentaje de diferencia basado en el
-        número de píxeles que no son cero en la matriz resultante
+        número de píxeles que no son cero en la matriz resultante. La funcion para los directorios
+        es recursiva por necesidades de diseño
         @params String carpeta
         @return void
     */
 
-    private static void compararFramesOpenCV(String carpeta){
+    public static void compararFramesOpenCV(String carpeta){
         try{
             File fcarpeta = new File(carpeta);
             File[] imagenes = fcarpeta.listFiles();
+
+            // Inicializar OpenCV
+            if (!OpenCVLoader.initDebug()) {
+                Log.e("FFmpeg", "Inicialización de OpenCV fallida.");
+            } else {
+                Log.d("FFmpeg", "OpenCV inicializado exitosamente.");
+            }
 
             for(File f : imagenes){
                 if(f.isFile()) {
                     Mat img1 = Imgcodecs.imread(f.getAbsolutePath(), Imgcodecs.IMREAD_GRAYSCALE);
                     for(File j : imagenes){
-                        if(!j.getAbsolutePath().equals(f.getAbsolutePath())){
+                        if(j.isFile() && (!f.getName().equals(j.getName()))){
                             Mat img2 = Imgcodecs.imread(j.getAbsolutePath(), Imgcodecs.IMREAD_GRAYSCALE);
 
                             //calcula la diferencia absoluta de las imagenes
@@ -137,26 +157,31 @@ public class KeyFrames {
                             //porcentaje de diferencia basado en el numero de pixeles que no son cero
                             double percentage = (Core.countNonZero(res) * 100.0) / res.total();
 
-                            Log.v("FRAMES", "Similarity: \n " +f.getAbsolutePath() + "\n" +
-                                    j.getAbsolutePath() + "\n    " + percentage + "%");
-
-
                             // Si el porcentaje es menor que el corte podemos concluir que son iguales
                             // por tanto si es menor, se elimina la imagen
                             double corte = 98.0;
                             if(percentage < corte){
+                                Log.v("FFmpeg", "borra imagen OPENCV "+j.getName() +" con "+f.getName());
                                 j.delete();
                                 //actualizamos las imagenes que hay en la carpeta
                                 imagenes = fcarpeta.listFiles();
                             }
+                            res.release();
+                            img2.release();
+
                         }
                     }
+                    img1.release();
+                }else if(f.isDirectory()){
+                    //llamada a funcion recursiva
+                    compararFramesOpenCV(f.getAbsolutePath());
                 }
             }
+            imagenes = fcarpeta.listFiles();
         }catch (Exception e){
-            Log.e("FRAMES", "Error al ejecutar OpenCV: "+e.getLocalizedMessage());
             e.fillInStackTrace();
         }
-    }
 
+    }
 }
+

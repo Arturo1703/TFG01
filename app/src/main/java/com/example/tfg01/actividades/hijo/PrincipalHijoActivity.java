@@ -5,6 +5,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -45,6 +46,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.TensorFlowLite;
+import org.tensorflow.lite.support.image.ImageProcessor;
+import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.image.ops.ResizeOp;
 
 import java.io.File;
 import java.io.IOException;
@@ -337,13 +344,21 @@ public class PrincipalHijoActivity extends AppCompatActivity {
     }
 
     private void analisisdeVideos() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        Log.i("PrincipalHijoActivity", "Start analisis de videos");
+        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 101);
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 101);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    101);
+        }
+
         String uid = mAuth.getCurrentUser().getUid();
         mDatabase = FirebaseDatabase.getInstance("https://tfg01-aa25e-default-rtdb.europe-west1.firebasedatabase.app").getReference();
         mDatabase.child("Users").child("hijo").child(uid).child("Padres").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
@@ -355,110 +370,157 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                         padres.add(ds.getKey().toString());
                     }
                     if(!padres.isEmpty()) {
-                        //Analizar videos del hijo
-                        //bloquear video y mandar alerta a los padres
-                        /*
-                            Se ocultará el archivo o se puede ir a una carpeta. Para cuando llegue una foto explicita,
-                            se cifra (bloquea) y luego el padre con una contraseña, pueda desbloquear. Tambien se puede
-                            ocultar o mover a otra carpeta y se oculta. El padre va a ver el móvil del hijo (fisicamente)
-                            y lo desbloquea a mano
-
-                            De momento se borra
-
-                         */
-                        //Instancia del helper de las carpetas que se analizan en el dispositivo
-
-                        FolderHelper folderHelper = FolderHelper.getInstance(PrincipalHijoActivity.this,PrincipalHijoActivity.this);
-
-                        //Directorio de la aplicacion donde se guardarán los keyframes
-                        String appFolder = folderHelper.getStorageDirPath();
-
-                        //TODO quitar la mayoria de los videos de appFolder y anañirlos en las appFolder + rutas de las carpetas originales
-                        ArrayList<String> folder_revisar = new ArrayList();
-
-                        //TODO mirar que ruta devuelve appFolder + ... por si es o no appFolder+"/...."
-                        //Extraccion de la carpeta de la camara en DCIM
-                        Thread threadDCIM = new Thread(new Runnable() {
+                        new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
-                                    extraerKeyFrames(FolderHelper.DCIM_CAMERA_FOLDER, appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                            Log.i("PrincipalHijoActivity", "Start analisis despues de comprobacion de padre");
+                            //Analizar videos del hijo
+                            //bloquear video y mandar alerta a los padres
+                            /*
+                                Se ocultará el archivo o se puede ir a una carpeta. Para cuando llegue una foto explicita,
+                                se cifra (bloquea) y luego el padre con una contraseña, pueda desbloquear. Tambien se puede
+                                ocultar o mover a otra carpeta y se oculta. El padre va a ver el móvil del hijo (fisicamente)
+                                y lo desbloquea a mano
+
+                                De momento se borra
+                             */
+
+                            //Instancia del helper de las carpetas que se analizan en el dispositivo
+                            FolderHelper folderHelper = FolderHelper.getInstance(PrincipalHijoActivity.this,PrincipalHijoActivity.this);
+                            //Directorio de la aplicacion donde se guardarán los keyframes
+                            String appFolder = folderHelper.getStorageDirPath();
+
+                            Log.i("PrincipalHijoActivity", "ruta app "+appFolder);
+                            Log.i("PrincipalHijoActivity", "Empieza extraccion frames ffmpeg");
+                            //Extraccion de la carpeta de la camara en DCIM
+                            Thread threadDCIM = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
+                                        extraerKeyFrames(FolderHelper.DCIM_CAMERA_FOLDER, appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                        //Extraccion de la carpeta de descargas
-                        Thread threadDownload = new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
-                                    extraerKeyFrames(FolderHelper.DOWNLOADS_FOLDER, appFolder + FolderHelper.DOWNLOADS_FOLDER);
+
+                            //Extraccion de la carpeta de descargas
+                            Thread threadDownload = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
+                                        extraerKeyFrames(FolderHelper.DOWNLOADS_FOLDER, appFolder + FolderHelper.DOWNLOADS_FOLDER);
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                        // Extraccion de la carpeta de telegram
-                        // Para versiones antiguas de telegram la ruta es distinta,
-                        Thread threadTelegram = new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
-                                    extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION, appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
-                                }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
-                                    extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER, appFolder + FolderHelper.TELEGRAM_FOLDER);
+                            // Extraccion de la carpeta de telegram
+                            // Para versiones antiguas de telegram la ruta es distinta,
+                            Thread threadTelegram = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
+                                        extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION, appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                    }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
+                                        extraerKeyFrames(FolderHelper.TELEGRAM_FOLDER, appFolder + FolderHelper.TELEGRAM_FOLDER);
+                                    }
                                 }
+                            });
+
+
+                            //Extraer keyframes
+                            threadDCIM.start();
+                            threadDownload.start();
+                            threadTelegram.start();
+
+                            // Esperar a que los hilos anteriores finalicen
+                            try {
+                                threadDCIM.join();
+                                threadDownload.join();
+                                threadTelegram.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
                             }
-                        });
 
+                            Log.i("PrincipalHijoActivity", "Empieza comparacion frames OPENCV");
+                            //Comparacion Frames OpenCV carpeta DCIM
+                            Thread threadDCIMOpenCV = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER) && FolderHelper.directoryExists(appFolder + FolderHelper.DCIM_CAMERA_FOLDER)) {
+                                        KeyFrames.compararFramesOpenCV(appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                                    }
+                                }
+                            });
+                            //Comparacion Frames OpenCV carpeta DOWNLOADS
+                            Thread threadDownloadOpenCV = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER) && FolderHelper.directoryExists(appFolder + FolderHelper.DOWNLOADS_FOLDER)) {
+                                        KeyFrames.compararFramesOpenCV(appFolder + FolderHelper.DOWNLOADS_FOLDER);
+                                    }
+                                }
+                            });
+                            //Comparacion Frames OpenCV carpeta TELEGRAM
+                            Thread threadTelegramOpenCV = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION) && FolderHelper.directoryExists(appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
+                                        KeyFrames.compararFramesOpenCV(appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                    }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER) && FolderHelper.directoryExists(appFolder + FolderHelper.TELEGRAM_FOLDER)) {
+                                        KeyFrames.compararFramesOpenCV(appFolder + FolderHelper.TELEGRAM_FOLDER);
+                                    }
+                                }
+                            });
 
-                        //Empezar anasis
-                        threadDCIM.start();
-                        threadDownload.start();
-                        threadTelegram.start();
+                            //Comparar Frames OpenCV
+                            threadDCIMOpenCV.start();
+                            threadDownloadOpenCV.start();
+                            threadTelegramOpenCV.start();
 
-                        // Esperar a que los hilos anteriores finalicen
-                        try {
-                            threadDCIM.join();
-                            threadDownload.join();
-                            threadTelegram.join();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            // Esperar a que los hilos anteriores finalicen
+                            try {
+                                threadDCIMOpenCV.join();
+                                threadDownloadOpenCV.join();
+                                threadTelegramOpenCV.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            Log.i("PrincipalHijoActivity", "Empieza analisis MODELO");
+                            //Analisis de videos de forma secuencial con el modelo
+                            Thread threadModelo = new Thread(new Runnable() {
+                                @Override
+                                public void run(){
+                                    //Analisis carpeta Camera
+                                    if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
+                                        String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
+                                        procesarRuta(rutaImagen, FolderHelper.DCIM_CAMERA_FOLDER);
+                                    }
+                                    //Analisis carpeta Downloads
+                                    if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
+                                        String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DOWNLOADS_FOLDER);
+                                        procesarRuta(rutaImagen, FolderHelper.DOWNLOADS_FOLDER);
+                                    }
+                                    //Analisis carpeta Telegram
+                                    if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
+                                        String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                        procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
+                                    }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
+                                        String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER);
+                                        procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER);
+                                    }
+                                    Log.i("PrincipalHijoActivity", "TERMINA ANALISIS MODELO");
+
+                                }
+                            });
+
+                            threadModelo.start();
+
                         }
-
-                        //Analisis de videos de forma secuencial con el modelo
-                        Thread threadModelo = new Thread(new Runnable() {
-                            @Override
-                            public void run(){
-                                //Analisis carpeta Camera
-                                if(FolderHelper.directoryExists(FolderHelper.DCIM_CAMERA_FOLDER)) {
-                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DCIM_CAMERA_FOLDER);
-                                    procesarRuta(rutaImagen, FolderHelper.DCIM_CAMERA_FOLDER);
-                                }
-                                //Analisis carpeta Downloads
-                                if(FolderHelper.directoryExists(FolderHelper.DOWNLOADS_FOLDER)) {
-                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.DOWNLOADS_FOLDER);
-                                    procesarRuta(rutaImagen, FolderHelper.DOWNLOADS_FOLDER);
-                                }
-                                //Analisis carpeta Telegram
-                                if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER_OLD_VERSION)) {
-                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
-                                    procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER_OLD_VERSION);
-                                }else if(FolderHelper.directoryExists(FolderHelper.TELEGRAM_FOLDER)) {
-                                    String rutaImagen = analisisContenidoExplicito(appFolder + FolderHelper.TELEGRAM_FOLDER);
-                                    procesarRuta(rutaImagen, FolderHelper.TELEGRAM_FOLDER);
-                                }
-
-
-                            }
-                        });
-
-                        //Borrar video si es explicito y mandar alerta a los padres
-
-                        threadModelo.start();
-
-                    }
+                    }).start();
                 }
             }
+        }
         });
     }
 
@@ -472,7 +534,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
             File[] archivos = f.listFiles();
 
             // Utilizamos la clase MediaMetadataRetriever para comprobar que efectivamente el
-            // archivo que se borra es un video independientemente de su extensión
+            // archivo es un video independientemente de su extensión
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
             for (File file : archivos) {
@@ -481,7 +543,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                         retriever.setDataSource(file.getAbsolutePath());
                         String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
                         if (mime != null && mime.startsWith("video/")) {
-                            Log.v("HijoActivity", "Fichero ejecutado por comando:\n\n\n       "+file.getName()+"\n");
                             KeyFrames.executeComandoKeyFrames(file.getAbsolutePath(), destFolder, file.getName());
                         }
                     } catch (Exception e) {
@@ -496,14 +557,13 @@ public class PrincipalHijoActivity extends AppCompatActivity {
             retriever.release();
 
         }catch (Exception e){
-            Log.e("HijoActivity", "Error al ejecutar analizarCarpeta en la ruta "
+            Log.e("PrincipalHijoActivity", "Error al ejecutar extraerKeyFrames en la ruta "
                     +origFolder+": \n"+e.getLocalizedMessage());
             e.fillInStackTrace();
         }
 
 
     }
-
     /*
         Esta implementación asume que todas las imágenes en la carpeta origen y sus subcarpetas son archivos JPG.
         Si hay otros tipos de archivos, serán ignorados. También, si la carpeta contiene subcarpetas,
@@ -511,7 +571,7 @@ public class PrincipalHijoActivity extends AppCompatActivity {
      */
     private String analisisContenidoExplicito(final String origFolder) {
         File folder = new File(origFolder);
-        if (folder.exists() && folder.isDirectory()) {
+        if (folder.exists()) {
             for (File file : folder.listFiles()) {
                 if (file.isDirectory()) {
                     String result = analisisContenidoExplicito(file.getAbsolutePath());
@@ -521,25 +581,27 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                 } else if (file.isFile() && file.getName().toLowerCase().endsWith(".jpg")) {
                     try {
                         ModelClassifier modelClassifier = new ModelClassifier(getApplicationContext());
-
-                        // Leer la imagen y convertirla en ByteBuffer
+                        // Leer la imagen y convertirla en Bitmap
                         Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-                        ByteBuffer byteBuffer = ModelClassifier.convertirBitmapAByteBuffer(bitmap);
-
-                        ModelClassifier.ClassificationResult result = modelClassifier.classify(byteBuffer);
+                        //clasificar la imagen
+                        ModelClassifier.ClassificationResult result = modelClassifier.classify(bitmap);
 
                         modelClassifier.close();
 
                         // Retorna la ruta si se clasifica como "porn" con más del 75% de confianza
                         if ("porn".equals(result.label) && (result.confidence > PORN_CLASS_THRESHOLD)) {
-                            return file.getAbsolutePath();
+                            //Se manda alerta al padre
+                            alertarPadre();
+                            Log.i("PrincipalHijoActivity", "analizado video: " + origFolder + " y clasificado como PORNO con una confianza de " + result.confidence);
+                            return folder.getAbsolutePath();
                         }
                     } catch (IOException e) {
-                        Log.e("HijoActivity", "Error al ejecutar analisisContenidoExplicito en la ruta "
-                                +origFolder+": \n"+e.getLocalizedMessage());
+                        Log.e("PrincipalHijoActivity", "Error al ejecutar analisisContenidoExplicito en la ruta "
+                                + origFolder + ": \n" + e.getLocalizedMessage());
                         e.fillInStackTrace();
                     }
                 }
+
             }
         }
         return null; // Retorna null si no se encuentra ninguna imagen clasificada como "porn"
@@ -554,8 +616,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
 
     private void procesarRuta(String rutaImagen, String rutaPadre){
         if (rutaImagen != null) {
-            //TODO mandar alerta al tutor
-
             String rutaVideo = FolderHelper.obtenerRutaVideo(rutaImagen, rutaPadre);
             if (rutaVideo != null) {
                 // ruta al vídeo para proceder a eliminarlo
@@ -563,17 +623,19 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                 String videoName = videoFile.getName();
                 boolean deleted = videoFile.delete();
                 if (deleted) {
-                    Log.i("HijoActivity",
+                    Log.i("PrincipalHijoActivity",
                             "Eliminado video pornografico: "
                                     + videoName);
                 } else {
-                    Log.e("HijoActivity",
+                    Log.e("PrincipalHijoActivity",
                             "Error al intentar eliminar un video pornografico: "
                                     + videoName);
                 }
             }
         }
     }
+
+
     private void alertarPadre(){
         mAuth = FirebaseAuth.getInstance();
         String uid = mAuth.getCurrentUser().getUid();

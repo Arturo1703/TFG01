@@ -35,7 +35,7 @@ public class FolderHelper {
 
     //ruta de la carpeta de descargas
     public static final String DOWNLOADS_FOLDER =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + "/";
 
     //ruta de la carpeta DCIM para videos captados con la camara
     public static final String DCIM_CAMERA_FOLDER =
@@ -91,7 +91,7 @@ public class FolderHelper {
     public static boolean directoryExists(final String path){
         File dir = new File(path);
 
-        return(!dir.exists()) && (dir.isDirectory());
+        return(dir.exists()) && (dir.isDirectory());
     }
 
     public static String obtenerRutaVideo(String rutaImagen, String rutaCarpetaPadre) {

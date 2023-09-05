@@ -1,6 +1,7 @@
 package com.example.tfg01.includes;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import com.example.tfg01.ml.Model;
 
@@ -8,6 +9,9 @@ import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.support.common.TensorProcessor;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
+import org.tensorflow.lite.support.image.ImageProcessor;
+import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.image.ops.ResizeOp;
 import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
@@ -42,32 +46,53 @@ public class ModelClassifier {
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
     }
 
-    public ClassificationResult classify(ByteBuffer byteBuffer) {
-        // Crea los inputs
-        TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 180, 180, 3}, DataType.FLOAT32);
-        inputFeature0.loadBuffer(byteBuffer);
+    public ClassificationResult classify(Bitmap bitmap) {
+        ImageProcessor imageProcessor = new ImageProcessor.Builder()
+                .add(new ResizeOp(180, 180, ResizeOp.ResizeMethod.BILINEAR))
+                .build();
+        TensorImage tensorImage = new TensorImage(DataType.FLOAT32);
+        tensorImage.load(bitmap);
+        tensorImage = imageProcessor.process(tensorImage);
 
-        // Corre la inferencia y obtiene los resultados
+        // Corre la inferencia
         TensorBuffer outputFeature0 = TensorBuffer.createFixedSize(new int[]{1, labels.size()}, DataType.FLOAT32);
-        tfliteInterpreter.run(inputFeature0.getBuffer(), outputFeature0.getBuffer());
+        tfliteInterpreter.run(tensorImage.getBuffer(), outputFeature0.getBuffer());
 
         // Procesa el resultado
-        TensorBuffer probabilities = probabilityProcessor.process(outputFeature0);
-        TensorLabel tensorLabel = new TensorLabel(labels, probabilities);
-        Map<String, Float> labeledProbability = tensorLabel.getMapWithFloatValue();
+        float[] outputData = outputFeature0.getFloatArray();
 
-        // Obtiene la clasificacion con la mayor probabilidad y el resultado
-        Map.Entry<String, Float> maxEntry = null;
-        for (Map.Entry<String, Float> entry : labeledProbability.entrySet()) {
-            if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0) {
-                maxEntry = entry;
+        // Aplica softmax para obtener las probabilidades
+        float[] probabilities = applySoftmax(outputData);
+        // Obtiene la clasificación con la mayor probabilidad y el resultado
+        int maxIndex = 0;
+        float maxConfidence = probabilities[0];
+        for (int i = 1; i < probabilities.length; i++) {
+            if (probabilities[i] > maxConfidence) {
+                maxConfidence = probabilities[i];
+                maxIndex = i;
             }
         }
+        String classifiedLabel = labels.get(maxIndex);
+        return new ClassificationResult(classifiedLabel, maxConfidence);
+    }
 
-        String classifiedLabel = maxEntry.getKey();
-        float confidence = maxEntry.getValue();
-
-        return new ClassificationResult(classifiedLabel, confidence);
+    private float[] applySoftmax(float[] logits) {
+        float[] softmaxValues = new float[logits.length];
+        float maxLogit = logits[0];
+        for (float logit : logits) {
+            if (logit > maxLogit) {
+                maxLogit = logit;
+            }
+        }
+        float sum = 0.0f;
+        for (int i = 0; i < logits.length; i++) {
+            softmaxValues[i] = (float) Math.exp(logits[i] - maxLogit);
+            sum += softmaxValues[i];
+        }
+        for (int i = 0; i < logits.length; i++) {
+            softmaxValues[i] = softmaxValues[i] / sum;
+        }
+        return softmaxValues;
     }
 
     public static ByteBuffer convertirBitmapAByteBuffer(Bitmap bitmap) {
