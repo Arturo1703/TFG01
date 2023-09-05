@@ -42,13 +42,6 @@
             android:id="@+id/cerrarSesionHijo"
             android:layout_below="@+id/TextHijo"/>
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cancelar Schedule"
-            android:id="@+id/cancelarScehdule"
-            android:layout_below="@+id/cerrarSesionHijo"
-            android:paddingTop="10dp"/>
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

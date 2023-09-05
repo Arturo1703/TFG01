@@ -79,7 +79,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
         setContentView(R.layout.activity_principal_hijo);
         //Inicializamos los distintos botones y secciones que veremos en esta actividad
         logOut = findViewById(R.id.cerrarSesionHijo);
-        cancelJob = findViewById(R.id.cancelarScehdule);
         drawerLayout = findViewById(R.id.DrawerLayout);
         navigationView = findViewById(R.id.Navigation_View);
         mailButton = findViewById(R.id.buzonButonHijo);
@@ -88,8 +87,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
 
         String idUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        MyFirebaseMessagingService myFirebaseMessagingService = new MyFirebaseMessagingService();
-        myFirebaseMessagingService.mandarAlerta("pedro Antonio");
         setSupportActionBar(toolbar);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.OpenDrawer, R.string.CloseDrawer);
@@ -106,12 +103,6 @@ public class PrincipalHijoActivity extends AppCompatActivity {
                 Intent intent = new Intent(PrincipalHijoActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();
-            }
-        });
-        cancelJob.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                cancelarServicioGeolocalizacion();
             }
         });
         mailButton.setOnClickListener(new View.OnClickListener() {
